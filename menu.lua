@@ -8,7 +8,8 @@ local btns = {
 		local mapFiles = file.Find('maps/*.bsp', 'GAME')
 		for k, v in ipairs(mapFiles) do
 			local name = string.lower(string.gsub(v, '%.bsp$', ''))
-			local prefix = string.match(name, '^(.-_)')
+			local prefix = string.match(name, '^(.-_)') or 'Other'
+			
 			sortedMaps[prefix] = sortedMaps[prefix] or {}
 			table.insert(sortedMaps[prefix], name)
 		end
@@ -36,15 +37,37 @@ local btns = {
 
 		menu:AddSpacer()
 
-		RunConsoleCommand('maxplayers', 1)
 		menu:AddOption('Multiplayer', function(self)
 			self.enabled = not self.enabled
-			self:SetIcon(self.enabled and 'icon16/accept.png' or false)
+			self:SetIcon(self.enabled and 'icon16/accept.png' or 'icon16/cancel.png')
 
 			RunConsoleCommand('maxplayers', self.enabled and 128 or 1)
 
 			self.m_MenuClicking = false
-		end)
+		end):SetIcon('icon16/cancel.png')
+
+		local activeGamemode = engine.ActiveGamemode()
+		local gamemodeSubMenu, gamemodeOption = menu:AddSubMenu('Gamemode')
+		local lastActiveOption
+		for i, gm in ipairs(engine.GetGamemodes()) do
+			local option = gamemodeSubMenu:AddOption(gm.title, function(self)
+				RunConsoleCommand('gamemode', gm.name)
+				self.m_MenuClicking = false
+				if lastActiveOption then
+					lastActiveOption:SetIcon()
+				end
+
+				self:SetIcon('icon16/accept.png')
+				lastActiveOption = self
+			end)
+			
+			if activeGamemode == gm.name then
+				option:SetIcon('icon16/accept.png')
+				lastActiveOption = option
+			end
+		end
+
+		gamemodeOption:SetIcon('icon16/controller.png')
 
 		menu:Open()
 	end},
